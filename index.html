@@ -205,6 +205,22 @@ h3{font-size:20px;line-height:1.15;margin:2px 0 0;font-weight:800;letter-spacing
 .l-main small{color:var(--muted);font-size:12.5px;font-weight:500}
 .l-amt{font-weight:700;white-space:nowrap;font-size:15px;font-variant-numeric:tabular-nums}
 .l-amt.plus{color:var(--good)}
+.top-r{display:flex;align-items:center;gap:8px}
+.bell{position:relative;width:38px;height:34px;border:0;border-radius:999px;background:var(--panel);color:var(--muted);display:grid;place-items:center;padding:0}
+.bell svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bell.has{color:var(--amber)}
+.bell b{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.al{display:flex;align-items:center;gap:12px;padding:12px 2px;border:0;border-bottom:1px solid var(--line);width:100%;background:none;text-align:left}
+.al:last-child{border-bottom:0}
+.al i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--dim)}
+.al i.red{background:var(--bad)}.al i.amber{background:var(--amber)}.al i.ice{background:var(--ice)}
+.al .go{color:var(--dim);font-weight:700;font-size:18px}
+.l-btn{background:none;border:0;padding:0;text-align:left;color:inherit}
+.edit-hint{font-size:12px;color:var(--dim);font-weight:600;margin:-2px 2px 4px}
+.edit-line{display:block;padding:12px 2px;border-bottom:1px solid var(--line)}
+.ed-grid{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px;margin-bottom:8px}
+.ed-grid .span2{grid-column:1/-1}
+.ed-act{display:flex;gap:8px}.ed-act .btn{flex:1;min-height:42px}
 .x{flex:none;border:0;background:var(--panel-2);color:var(--muted);border-radius:9px;min-width:30px;height:30px;font-size:16px;font-weight:700;padding:0 8px}
 .x.armed{color:var(--on-amber);background:var(--bad);font-size:12px}
 .paybtn{flex:none;border:0;background:var(--good-soft);color:var(--good);font-weight:700;border-radius:9px;padding:7px 10px;font-size:12.5px}
@@ -299,7 +315,7 @@ h3{font-size:20px;line-height:1.15;margin:2px 0 0;font-weight:800;letter-spacing
 <div id="app">
   <header class="top">
     <div class="brand">HGroup<small>Fundation</small></div>
-    <button class="sync local" id="sync" aria-label="Backup date"><i></i><span>Backup</span></button>
+    <div class="top-r"><button class="bell" id="bell" aria-label="Notificări"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><b id="bell-n" hidden></b></button><button class="sync local" id="sync" aria-label="Backup date"><i></i><span>Backup</span></button></div>
   </header>
 
   <main id="pager" aria-label="Pagini">
@@ -479,7 +495,7 @@ const exBanner=()=>hasExamples()?`<div class="ex"><span>Vezi date de exemplu ca 
 /* ---------- render ---------- */
 let rq=0;
 function render(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;renderAll()})}
-function renderAll(){renderAzi();renderCal();renderBani();renderParc();renderSvc();if(sheet&&sheet.refresh)sheet.refresh();if(justAdded)setTimeout(()=>{justAdded=null},500)}
+function renderAll(){renderAzi();renderCal();renderBani();renderParc();renderSvc();updateAlerts();if(sheet&&sheet.refresh)sheet.refresh();if(justAdded)setTimeout(()=>{justAdded=null},500)}
 function ring(done,total){const C=2*Math.PI*21,p=total?done/total:0;return `<div class="ring" aria-label="${done} din ${total} gata"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" class="ring-bg"/><circle cx="26" cy="26" r="21" class="ring-fg" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${(C*(1-p)).toFixed(2)}"/></svg><div class="ring-t num">${done}<span>/${total}</span></div></div>`}
 function taskRow(t,late){const appt=!!t.time;return `<div class="task ${t.done?'done':''} ${appt?'appt':''} ${t.id===justAdded?'pop':''}">
   <button class="chk" data-act="toggle" data-id="${t.id}" aria-label="${t.done?'Debifează':'Bifează'}">${CHECK}</button>
@@ -592,6 +608,7 @@ function fitSheet(){const vv=window.visualViewport;if(!vv){sheetEl.style.top='0p
 if(window.visualViewport){visualViewport.addEventListener('resize',()=>{if(sheet)fitSheet()});visualViewport.addEventListener('scroll',()=>{if(sheet)fitSheet()})}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 $('#sync').addEventListener('click',()=>openBackup());
+$('#bell').addEventListener('click',()=>openAlerts());
 function arm(btn,fn,label){if(btn.dataset.armed){fn();return}btn.dataset.armed='1';const old=btn.innerHTML;btn.textContent=label||'Apasă din nou ca să confirmi';btn.classList.add('armed');setTimeout(()=>{if(btn.isConnected&&btn.dataset.armed){delete btn.dataset.armed;btn.innerHTML=old;btn.classList.remove('armed')}},3500)}
 const bar=(eb,title,saveId,saveLabel)=>`<div class="sh-bar"><button type="button" class="sh-x" data-close aria-label="Închide">×</button><div class="ttl"><small>${eb}</small><b>${title}</b></div>${saveId?`<button type="button" class="sh-save" id="${saveId}">${saveLabel||'Salvează'}</button>`:'<span class="sh-sp"></span>'}</div>`;
 const field=(label,inner,cls='')=>`<label class="fld ${cls}"><span>${label}</span>${inner}</label>`;
@@ -667,10 +684,22 @@ function openExpense(o={}){
   });
 }
 
-function costLines(arr,emptyMsg){return arr.length?`<div class="list">${arr.map(x=>`<div class="line"><span class="l-main"><div>${esc(x.label||'Cost')}</div><small>${fmtDay(x.date)}</small></span><span class="l-amt">${eur(x.amount)}</span><button class="x" data-rm="${x.id}" aria-label="Șterge">×</button></div>`).join('')}</div>`:`<p class="hint">${emptyMsg}</p>`}
+function costLines(arr,emptyMsg,editId){if(!arr.length)return `<p class="hint">${emptyMsg}</p>`;
+  return `<p class="edit-hint">Atinge un rând ca să-l modifici</p><div class="list">${arr.map(x=>x.id===editId?
+    `<div class="edit-line"><div class="ed-grid"><input class="in" id="ce-l" value="${esc(x.label||'')}" placeholder="Ce?" autocomplete="off"><input class="in" id="ce-a" inputmode="decimal" value="${esc(String(x.amount).replace('.',','))}" aria-label="Suma"><input type="date" class="in span2" id="ce-d" value="${esc(x.date||today())}" aria-label="Data"></div><div class="ed-act"><button class="btn ghost" data-ce-cancel>Anulează</button><button class="btn primary" data-ce-save="${x.id}">Salvează</button></div></div>`
+    :`<div class="line"><button class="l-btn l-main" data-edc="${x.id}"><div>${esc(x.label||'Cost')}</div><small>${fmtDay(x.date)}</small></button><span class="l-amt">${eur(x.amount)}</span><button class="x" data-rm="${x.id}" aria-label="Șterge">×</button></div>`).join('')}</div>`}
+function costEditClick(e,root,st,list,save,refresh){
+  const ed=e.target.closest('[data-edc]');if(ed){st.edit=ed.dataset.edc;refresh();const a=$('#ce-a',root);if(a){a.focus();try{a.select()}catch(_){}}return true}
+  if(e.target.closest('[data-ce-cancel]')){st.edit=null;refresh();return true}
+  const sv=e.target.closest('[data-ce-save]');
+  if(sv){const a=num($('#ce-a',root).value);if(a<=0){$('#ce-a',root).focus();toast('Scrie suma');return true}
+    const id=sv.dataset.ceSave,lbl=$('#ce-l',root).value.trim(),d=$('#ce-d',root).value||today();st.edit=null;
+    save(list().map(x=>x.id===id?{...x,label:lbl||x.label||'Cost',amount:a,date:d}:x));toast('Modificat');return true}
+  return false}
+function costEditKeys(root){root.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.edit-line')){e.preventDefault();const b=root.querySelector('[data-ce-save]');if(b)b.click()}})}
 
 function openCar(id){
-  const c0=S.cars[id];if(!c0)return;const D={sellPrice:'',sellDate:today()};
+  const c0=S.cars[id];if(!c0)return;const D={sellPrice:'',sellDate:today()},st={edit:null};
   openSheet(`${bar('Mașină din parc','<span id="cs-title"></span>')}
   <div id="cs-sum"></div>
   <div class="sh-sec">Detalii cumpărare</div>
@@ -690,9 +719,9 @@ function openCar(id){
       $('#cs-title',root).textContent=c.name;const inv=carInvested(c),days=carDays(c);
       const k=carShare(c),pr=carProfit(c);
       $('#cs-sum',root).innerHTML=`<div class="box ${c.sold?'good':''}"><div class="box-row"><span>Investit total</span><b>${eur(inv)}</b></div>${k<1?`<div class="box-row"><span>Partea ta (${shareTag(c)})</span><b>${eur(inv*k)}</b></div>`:''}<div class="box-row"><span>${c.sold?'Vândut în':'În parc de'}</span><b>${zile(days)}</b></div>${c.sold?`<div class="box-row"><span>Profit${k<1?' total':''}</span><b class="${pr>=0?'good-t':'bad-t'}">${seur(pr)}</b></div>${k<1?`<div class="box-row"><span>Profitul tău</span><b class="${pr>=0?'good-t':'bad-t'}">${seur(pr*k)}</b></div>`:''}`:''}</div>`;
-      $('#cs-costs',root).innerHTML=costLines(c.costs||[],'Niciun cost încă. Adaugă piese, acte, detailing — se adună automat.');
+      $('#cs-costs',root).innerHTML=costLines(c.costs||[],'Niciun cost încă. Adaugă piese, acte, detailing — se adună automat.',st.edit);
       const sell=$('#cs-sell',root);if(!sell.contains(document.activeElement)){
-        sell.innerHTML=c.sold?`<div class="box good"><div class="box-row"><span>Preț vânzare</span><b>${eur(c.sellPrice)}</b></div><div class="box-row"><span>Data</span><b>${fmtDay(c.sellDate)}</b></div></div><button class="btn ghost block" data-x="unsell">Anulează vânzarea</button>`
+        sell.innerHTML=c.sold?`<div class="box good"><div class="box-row"><span>Preț vânzare</span><b>${eur(c.sellPrice)}</b></div><div class="box-row"><span>Data</span><b>${fmtDay(c.sellDate)}</b></div></div><button class="btn ghost block" data-x="unsell">Modifică sau anulează vânzarea</button>`
         :`<div class="grid2">${field('Preț vânzare',`<input id="cs-sp" class="in" inputmode="decimal" placeholder="€" value="${esc(D.sellPrice)}">`)}${field('Data',`<input id="cs-sd" type="date" class="in" value="${esc(D.sellDate)}">`)}</div><div class="box"><div class="box-row" id="cs-prev"></div></div><button class="btn good block" data-x="sell">Marchează vândut</button>`;
         preview();
       }};
@@ -706,19 +735,21 @@ function openCar(id){
     $('#cs-note',root).onchange=e=>upd({note:e.target.value.trim()});
     $('#cs-addf',root).onsubmit=e=>{e.preventDefault();const a=num($('#cs-ca',root).value);if(a<=0){$('#cs-ca',root).focus();return}const c=S.cars[id];put('cars',{...c,costs:[...(c.costs||[]),{id:uid(),label:$('#cs-cl',root).value.trim()||'Cost',amount:a,date:today()}]});$('#cs-cl',root).value='';$('#cs-ca',root).value='';$('#cs-cl',root).focus()};
     root.addEventListener('input',e=>{if(e.target.id==='cs-sp'){D.sellPrice=e.target.value;preview()}if(e.target.id==='cs-sd')D.sellDate=e.target.value});
+    costEditKeys(root);
     root.addEventListener('click',e=>{
+      if(costEditClick(e,root,st,()=>(S.cars[id]&&S.cars[id].costs)||[],arr=>upd({costs:arr}),refresh))return;
       const sh=e.target.closest('[data-share]');if(sh){root.querySelectorAll('[data-share]').forEach(b=>b.classList.toggle('on',b===sh));$('#cs-pw',root).hidden=sh.dataset.share!=='50';upd({share:+sh.dataset.share});return}
       const rm=e.target.closest('[data-rm]');if(rm){arm(rm,()=>{const c=S.cars[id];upd({costs:(c.costs||[]).filter(x=>x.id!==rm.dataset.rm)})},'Șterge?');return}
       const x=e.target.closest('[data-x]');if(!x)return;
       if(x.dataset.x==='sell'){const p=num(D.sellPrice);if(p<=0){$('#cs-sp',root).focus();return}document.activeElement.blur();upd({sold:true,sellPrice:p,sellDate:D.sellDate||today()});toast('Vândut · profitul tău '+seur((p-carInvested(S.cars[id]))*carShare(S.cars[id])))}
-      if(x.dataset.x==='unsell'){const c=S.cars[id];D.sellPrice=String(c.sellPrice||'');upd({sold:false})}
+      if(x.dataset.x==='unsell'){const c=S.cars[id];D.sellPrice=String(c.sellPrice||'').replace('.',',');D.sellDate=c.sellDate||today();upd({sold:false})}
     });
     $('#cs-del',root).onclick=e=>arm(e.currentTarget,()=>{del('cars',id);closeSheet();toast('Mașina a fost ștearsă')});
   });
 }
 
 function openJob(id){
-  const j0=S.jobs[id];if(!j0)return;
+  const j0=S.jobs[id];if(!j0)return;const st={edit:null};
   openSheet(`${bar('Job service','<span id="js-title"></span>')}
   <div id="js-sum"></div>
   <div id="js-act" class="sh-actions"></div>
@@ -732,7 +763,7 @@ function openJob(id){
       $('#js-title',root).textContent=j.title;
       $('#js-sum',root).innerHTML=`<div class="box ${j.done&&j.paid?'good':''}"><div class="box-row"><span>De încasat</span><b>${eur(j.price)}</b></div><div class="box-row"><span>Piese</span><b>${eur(jobParts(j))}</b></div><div class="box-row"><span>Profit</span><b class="${p>=0?'good-t':'bad-t'}">${seur(p)}</b></div><div class="box-row"><span>${j.done?'Finalizat în':'În lucru de'}</span><b>${zile(jobDays(j))}</b></div></div>`;
       $('#js-act',root).innerHTML=`${j.done?'<button class="btn ghost block" data-x="reopen">Redeschide jobul</button>':'<button class="btn primary block" data-x="done">Finalizează jobul</button>'}<button class="btn ${j.paid?'ghost':'good'} block" data-x="paid">${j.paid?`Încasat ${fmtDay(j.paidDate)} · anulează`:`Marchează încasat ${eur(j.price)}`}</button>`;
-      $('#js-parts',root).innerHTML=costLines(j.parts||[],'Nicio piesă încă. Adaugă ce cumperi pentru job.');
+      $('#js-parts',root).innerHTML=costLines(j.parts||[],'Nicio piesă încă. Adaugă ce cumperi pentru job.',st.edit);
     };
     sheet.refresh=refresh;refresh();
     const upd=patch=>{const j=S.jobs[id];if(j)put('jobs',{...j,...patch})};
@@ -741,7 +772,9 @@ function openJob(id){
     $('#js-p',root).onchange=e=>upd({price:num(e.target.value)});
     $('#js-s',root).onchange=e=>{if(e.target.value)upd({startDate:e.target.value})};
     $('#js-addf',root).onsubmit=e=>{e.preventDefault();const a=num($('#js-pa',root).value);if(a<=0){$('#js-pa',root).focus();return}const j=S.jobs[id];put('jobs',{...j,parts:[...(j.parts||[]),{id:uid(),label:$('#js-pl',root).value.trim()||'Piese',amount:a,date:today()}]});$('#js-pl',root).value='';$('#js-pa',root).value='';$('#js-pl',root).focus()};
+    costEditKeys(root);
     root.addEventListener('click',e=>{
+      if(costEditClick(e,root,st,()=>(S.jobs[id]&&S.jobs[id].parts)||[],arr=>upd({parts:arr}),refresh))return;
       const rm=e.target.closest('[data-rm]');if(rm){arm(rm,()=>{const j=S.jobs[id];upd({parts:(j.parts||[]).filter(x=>x.id!==rm.dataset.rm)})},'Șterge?');return}
       const x=e.target.closest('[data-x]');if(!x)return;const j=S.jobs[id];
       if(x.dataset.x==='done'){upd({done:true,doneDate:today()});toast(`Job finalizat în ${zile(daysBetween(j.startDate,today()))}`)}
@@ -826,6 +859,65 @@ function openBackup(){
   });
 }
 
+/* ---------- notifications ---------- */
+function computeAlerts(){
+  const t=today(),tm=addDays(t,1),now=new Date(),hm=pad(now.getHours())+':'+pad(now.getMinutes()),A=[],tasks=Object.values(S.tasks),byTime=(a,b)=>a.time<b.time?-1:1;
+  tasks.filter(x=>!x.done&&x.time&&x.date===t).sort(byTime).forEach(x=>A.push({sev:x.time<hm?'red':'amber',urgent:true,title:x.text,sub:`Azi la ${x.time}${x.time<hm?' · ora a trecut':''}`,act:'task',id:x.id}));
+  const late=tasks.filter(x=>!x.done&&x.date<t);if(late.length)A.push({sev:'red',urgent:true,title:`${late.length} ${late.length===1?'task restant':'taskuri restante'}`,sub:'Din zilele trecute, nebifate',act:'late'});
+  Object.values(S.expenses).filter(e=>e.future).forEach(e=>{const n=Math.round((parseISO(e.date)-parseISO(t))/864e5);if(n<=3){const c=catOf(e.cat);
+    A.push({sev:n<0?'red':'amber',urgent:true,title:`${e.note||c.name} · ${eur(e.amount)}`,sub:n<0?`Plată întârziată de ${zile(-n)}`:n===0?'Plată scadentă azi':n===1?'Plată scadentă mâine':`Plată scadentă în ${zile(n)}`,act:'exp',id:e.id})}});
+  Object.values(S.jobs).forEach(j=>{if(j.done&&!j.paid)A.push({sev:'red',urgent:true,title:`${j.title} · ${eur(j.price)}`,sub:`Job gata ${j.doneDate?'de '+zile(daysBetween(j.doneDate,t)):''}, încă neîncasat`,act:'job',id:j.id})});
+  tasks.filter(x=>!x.done&&x.time&&x.date===tm).sort(byTime).forEach(x=>A.push({sev:'ice',urgent:false,title:x.text,sub:`Mâine la ${x.time}`,act:'task',id:x.id}));
+  const open=tasks.filter(x=>!x.done&&!x.time&&x.date===t).length;if(open)A.push({sev:'amber',urgent:false,title:`${open} ${open===1?'task':'taskuri'} pe azi`,sub:'Lista de azi',act:'today'});
+  Object.values(S.jobs).filter(j=>!j.done&&jobDays(j)>=14).forEach(j=>A.push({sev:'amber',urgent:false,title:j.title,sub:`În lucru de ${zile(jobDays(j))}`,act:'job',id:j.id}));
+  Object.values(S.cars).filter(c=>!c.sold&&carDays(c)>=60).sort((a,b)=>carDays(b)-carDays(a)).forEach(c=>A.push({sev:carDays(c)>=90?'red':'amber',urgent:false,title:c.name,sub:`${zile(carDays(c))} în parc · ${eur(myInv(c))} blocați`,act:'car',id:c.id}));
+  const last=S.settings&&S.settings.lastBackup;if(!last||daysBetween(last,t)>=14)A.push({sev:'amber',urgent:false,title:'Fă un backup',sub:last?`Ultimul acum ${zile(daysBetween(last,t))}`:'N-ai salvat încă niciun backup',act:'backup'});
+  return A;
+}
+const canNotify=()=>('Notification' in window)&&('serviceWorker' in navigator);
+function notify(title,body,tag){if(!canNotify()||Notification.permission!=='granted')return;
+  navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,tag,icon:'icon-192.png',badge:'icon-192.png'})).catch(()=>{try{new Notification(title,{body,tag})}catch(e){}})}
+let lastBadge=-1,timers=[];
+function updateAlerts(){
+  const n=computeAlerts().filter(a=>a.urgent).length,b=$('#bell'),nb=$('#bell-n');
+  b.classList.toggle('has',n>0);nb.hidden=!n;nb.textContent=n>9?'9+':n;b.setAttribute('aria-label',n?`Notificări: ${n} urgente`:'Notificări');
+  if(n!==lastBadge&&canNotify()&&Notification.permission==='granted'&&navigator.setAppBadge){lastBadge=n;try{(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch(e){}}
+  // reminder 15 minutes before each appointment of the next 24 h (works while the app is open)
+  timers.forEach(clearTimeout);timers=[];
+  if(canNotify()&&Notification.permission==='granted'){const now=Date.now();
+    for(const x of Object.values(S.tasks)){if(x.done||!x.time)continue;const at=new Date(`${x.date}T${x.time}:00`).getTime()-15*60000,wait=at-now;
+      if(wait>0&&wait<864e5)timers.push(setTimeout(()=>notify(`Programare la ${x.time}`,x.text,'appt-'+x.id),wait))}}
+}
+function alertGo(act,id){
+  if(act==='task'&&S.tasks[id])openTask(id);
+  else if(act==='exp'&&S.expenses[id])openExpense({edit:S.expenses[id]});
+  else if(act==='job'&&S.jobs[id])openJob(id);
+  else if(act==='car'&&S.cars[id])openCar(id);
+  else if(act==='backup')openBackup();
+  else{UI.day=today();closeSheet();render();goPage(1)}
+}
+function openAlerts(){
+  openSheet(`${bar('Notificări','De urmărit')}<div id="al-list"></div><div class="sh-sec">Notificări pe telefon</div><div id="al-perm"></div>`,root=>{
+    const row=a=>`<button class="al" data-al="${a.act}" data-id="${a.id||''}"><i class="${a.sev}"></i><span class="l-main"><div>${esc(a.title)}</div><small>${esc(a.sub)}</small></span><span class="go">›</span></button>`;
+    const refresh=()=>{const A=computeAlerts(),u=A.filter(a=>a.urgent),o=A.filter(a=>!a.urgent);
+      $('#al-list',root).innerHTML=(A.length?'':'<div class="empty"><b>Totul e la zi</b>Nimic de urmărit acum.</div>')
+        +(u.length?`<div class="sec"><span>Acum</span><b>${u.length}</b></div><div class="list">${u.map(row).join('')}</div>`:'')
+        +(o.length?`<div class="sec ${u.length?'mt':''}"><span>De urmărit</span></div><div class="list">${o.map(row).join('')}</div>`:'');
+      let h;
+      if(!canNotify())h='<p class="hint">Pe iPhone, notificările merg doar dacă deschizi aplicația de pe iconița de pe ecranul principal (iOS 16.4 sau mai nou).</p>';
+      else if(Notification.permission==='granted')h='<p class="hint">Pornite. Iconița aplicației arată câte lucruri urgente ai, iar cu 15 minute înainte de o programare primești o alertă, cât timp aplicația e deschisă sau abia ai ieșit din ea.</p><button class="btn ghost block" id="al-test">Trimite o notificare de test</button>';
+      else if(Notification.permission==='denied')h='<p class="hint">Notificările sunt blocate. Le pornești din Setări → Notificări → HGroup.</p>';
+      else h='<button class="btn primary block" id="al-on">Pornește notificările</button><p class="hint">Primești numărul de lucruri urgente pe iconița aplicației și o alertă înainte de programări.</p>';
+      $('#al-perm',root).innerHTML=h};
+    sheet.refresh=refresh;refresh();
+    root.addEventListener('click',async e=>{
+      const b=e.target.closest('[data-al]');if(b){alertGo(b.dataset.al,b.dataset.id);return}
+      if(e.target.closest('#al-on')){try{const r=await Notification.requestPermission();if(r==='granted'){lastBadge=-1;updateAlerts();notify('Notificările sunt pornite','Pe iconiță vezi câte lucruri urgente ai.','hg-on')}}catch(_){}refresh();return}
+      if(e.target.closest('#al-test')){const n=computeAlerts().filter(a=>a.urgent).length;notify('HGroup Fundation',n?`Ai ${n} ${n===1?'lucru urgent':'lucruri urgente'} de urmărit.`:'Totul e la zi.','hg-test');toast('Trimisă')}
+    });
+  });
+}
+
 function openAddCat(){
   const used=new Set(cats().map(c=>c.color));let color=SWATCHES.find(s=>!used.has(s))||SWATCHES[0];
   openSheet(`${bar('Categorie nouă','Adaugă','nc-save','Creează')}
@@ -898,6 +990,10 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 renderAll();
 requestAnimationFrame(()=>{pager.scrollLeft=pager.clientWidth;onScroll();requestAnimationFrame(()=>{pager.scrollLeft=pager.clientWidth;onScroll()})});
 initStore();
+setTimeout(()=>{const n=computeAlerts().filter(a=>a.urgent).length;let k='';try{k=localStorage.getItem('hg-sum')||''}catch(e){}
+  if(n&&k!==today()){toast(`${n} ${n===1?'lucru urgent':'lucruri urgente'} · vezi clopoțelul`);try{localStorage.setItem('hg-sum',today())}catch(e){}}},2800);
+setInterval(()=>{if(document.visibilityState==='visible')updateAlerts()},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')updateAlerts()});
 if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
 })();
 </script>
